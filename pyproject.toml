@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "png-gif-variant1"
+version = "1.0.0"
+description = "Asynchronous PNG to GIF conversion, variant 1"
+requires-python = ">=3.10"
+dependencies = ["Pillow==13.0.0"]
+
+[project.optional-dependencies]
+test = [
+    "pytest==9.2.0", "hypothesis==6.170.15", "coverage==7.17.2",
+    "pycodestyle==2.15.0", "radon==6.0.1",
+]
+
+[project.scripts]
+png-to-gif = "png_gif.convert:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+faulthandler_timeout = 60

@@ -1,0 +1,47 @@
+[
+  {
+    "name": "color",
+    "mode": "RGB",
+    "size": [
+      64,
+      48
+    ],
+    "ok": true
+  },
+  {
+    "name": "grayscale",
+    "mode": "L",
+    "size": [
+      73,
+      51
+    ],
+    "ok": true
+  },
+  {
+    "name": "transparent",
+    "mode": "RGBA",
+    "size": [
+      90,
+      60
+    ],
+    "ok": true
+  },
+  {
+    "name": "palette",
+    "mode": "P",
+    "size": [
+      120,
+      40
+    ],
+    "ok": true
+  },
+  {
+    "name": "single_pixel",
+    "mode": "RGB",
+    "size": [
+      1,
+      1
+    ],
+    "ok": true
+  }
+]
