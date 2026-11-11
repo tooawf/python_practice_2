@@ -7,7 +7,10 @@ name = "png-gif-variant1"
 version = "1.0.0"
 description = "Asynchronous PNG to GIF conversion, variant 1"
 requires-python = ">=3.10"
-dependencies = ["Pillow==13.0.0"]
+dependencies = [
+    "Pillow==13.0.0", "fastapi==0.162.4", "uvicorn==0.54.0",
+    "httpx==0.28.1", "defusedxml==0.7.1",
+]
 
 [project.optional-dependencies]
 test = [
@@ -17,6 +20,7 @@ test = [
 
 [project.scripts]
 png-to-gif = "png_gif.convert:main"
+png-gif-server = "png_gif.server:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
