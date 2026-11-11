@@ -50,7 +50,10 @@ def authorized(header, settings):
 
 
 def create_store(settings):
-    """Создать файловый слой данных второго этапа."""
+    """Выбрать файловый слой этапа 2 или документный TinyDB этапа 3."""
+    if settings.backend == "tinydb":
+        from png_gif.tiny_store import TinyStore
+        return TinyStore(settings.data_dir / "records.tinydb.json")
     return FileStore(settings.data_dir / "records.json")
 
 

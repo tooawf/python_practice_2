@@ -1,16 +1,17 @@
 Name                         Stmts   Miss Branch BrPart   Cover   Missing
 -------------------------------------------------------------------------
 src\png_gif\__init__.py          0      0      0      0 100.00%
-src\png_gif\application.py      69      0      4      0 100.00%
+src\png_gif\application.py      72      2      6      1  96.15%   55-56
 src\png_gif\client.py           51      1      8      0  98.31%   93
 src\png_gif\config.py           23      3      6      3  79.31%   26, 31, 33
 src\png_gif\convert.py          34     34      6      0   0.00%   3-48
-src\png_gif\file_store.py       38      4      6      1  84.09%   49->exit, 53-56
-src\png_gif\jobs.py             74      4     18      4  91.30%   22, 42->41, 57->59, 68-69, 101
-src\png_gif\model.py           106      2     20      3  96.03%   27, 95->97, 104
+src\png_gif\file_store.py       38      1      6      2  93.18%   49->exit, 55
+src\png_gif\jobs.py             74      4     18      3  92.39%   22, 42->41, 68-69, 101
+src\png_gif\model.py           106      0     20      0 100.00%
 src\png_gif\routes.py           55      0      4      0 100.00%
-src\png_gif\schema.py           32      4      8      2  85.00%   28, 30-31, 54
+src\png_gif\schema.py           32      2      8      2  90.00%   28, 54
 src\png_gif\server.py           16     16      2      0   0.00%   3-25
+src\png_gif\tiny_store.py       23     23      0      0   0.00%   3-39
 src\png_gif\xml_codec.py        49      0     24      0 100.00%
 -------------------------------------------------------------------------
-TOTAL                          547     68    106     13  86.06%
+TOTAL                          573     86    108     11  84.58%

@@ -1,0 +1,2 @@
+OK: 19 Python files; limits 1000/80/40/7, complexity <=10
+PEP8: pycodestyle --max-line-length=80 src tests examples tools -> PASS

@@ -12,7 +12,7 @@ class Settings:
     username: str
     password: str
     data_dir: Path
-    backend: str = "file"
+    backend: str = "tinydb"
     host: str = "127.0.0.1"
     port: int = 8001
     test_mode: bool = False
@@ -26,7 +26,7 @@ def load_config(filename):
         raise ValueError("Configuration file not found")
     username = parser.get("auth", "username")
     password = parser.get("auth", "password")
-    backend = parser.get("server", "backend", fallback="file")
+    backend = parser.get("server", "backend", fallback="tinydb")
     if not username or ":" in username or not password:
         raise ValueError("Username and password must be nonempty")
     if backend not in {"file", "tinydb"}:

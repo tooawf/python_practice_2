@@ -74,7 +74,7 @@ run.bat --config config.ini
 | server.host | Интерфейс сервера | 127.0.0.1 |
 | server.port | Порт Uvicorn | 8001 |
 | server.data_dir | Папка данных относительно INI | data |
-| server.backend | Реализация хранилища | file |
+| server.backend | Реализация хранилища | tinydb |
 | server.test_mode | Не запускать настоящий конвертер | false |
 
 Секция auth обязательна. Неверный слой хранения, пустое имя или пароль
@@ -266,3 +266,81 @@ python -m coverage html --data-file=.coverage.file
 - `tools/check_quality.py`: `inspect_function`, `inspect_ast`,
   `inspect_complexity`, `inspect_file` проверяют ограничения,
   `main` выводит результат проверки исходников, примеров и тестов.
+
+## Этап 3. Документная база TinyDB
+
+В окончательной конфигурации используется `backend = tinydb`.
+Для повторения второго этапа смените его на `file`.
+Файлы двух реализаций независимы:
+
+- файловый слой: `data/records.json`;
+- TinyDB: `data/records.tinydb.json`.
+
+Миграция существующих записей между ними автоматически не выполняется.
+`tiny_store.TinyStore` использует библиотеку tinydb и отдельные
+таблицы `actor`, `instruction`, `response`. `rows` возвращает документы
+в порядке ключей, `put` вызывает upsert по полю key, `delete` удаляет
+документ по key, `close` закрывает базу. Модель, API-клиент и маршруты
+при замене хранилища не меняются. Блокировка сериализует доступ
+HTTP-обработчиков и фонового работника к TinyDB.
+Одновременно запускается один сервер на одну папку данных.
+
+Повторение проверок обоих слоёв из PowerShell:
+
+```powershell
+$env:TEST_BACKEND = "file"
+python -m coverage run --data-file=.coverage.file -m pytest tests/test_mbt.py tests/test_workflow.py
+python -m coverage report --data-file=.coverage.file
+$env:TEST_BACKEND = "tinydb"
+python -m coverage run --data-file=.coverage.tinydb -m pytest tests/test_mbt.py tests/test_workflow.py
+python -m coverage report --data-file=.coverage.tinydb
+python -m coverage html --data-file=.coverage.tinydb
+python -m pytest tests/test_convert.py
+python -m pycodestyle --max-line-length=80 src tests examples tools
+python tools/check_quality.py
+```
+
+В bash переменная задаётся перед командой:
+`TEST_BACKEND=tinydb python -m pytest tests/test_mbt.py`.
+Все HTTP-проверки в указанных двух файлах генерируются Hypothesis;
+ручные модульные тесты CLI запускаются отдельно.
+Текстовые отчёты coverage находятся в `reports`, HTML создаётся
+локально в `htmlcov` и не включается в git.
+
+Проверка оформления ограничивает Python-файлы 1000 строками,
+строки 80 символами, функции 40 строками и 7 аргументами.
+Предел цикломатической сложности функций — 10. Комментарии вне
+docstring запрещены, числовые сравнения используют константы,
+кроме структурных 0 и 1. PEP8 проверяется pycodestyle.
+
+## Сопоставление с критериями
+
+| Требование | Подтверждение |
+|---|---|
+| Этап 1: stdin и файл результата | `convert.py`, бинарный subprocess input |
+| Пять входных примеров | `examples/demo.py`, `examples/results.json` |
+| Все десять маршрутов таблицы 1 | `routes.py`, `tests/test_mbt.py` |
+| FastAPI и XML | `application.py`, `xml_codec.py` |
+| RFC 7617, учётные данные в файле | `authorized`, `load_config`, `config.example.ini` |
+| Асинхронный subprocess и тестовый режим | `jobs.py`, `tests/test_workflow.py` |
+| Имена методов клиента как у модели | `client.ApiClient`, `model.Model` |
+| RuleBasedStateMachine и независимый эталон | `ApiMachine` |
+| Покрытие ветвей только Hypothesis | `reports/coverage-file.txt`, `reports/coverage-tinydb.txt` |
+| Подключение документной TinyDB | `tiny_store.py`, тот же набор MBT |
+| README, .gitignore, src, tests, запуск | структура репозитория, `run.bat` |
+| Оформление Python | `tools/check_quality.py`, `reports/quality.txt` |
+| История трёх этапов | коммиты `feat(cli)`, `feat(api)`, `feat(storage)` |
+
+## Практические ограничения
+
+GIF ограничивает число цветов и поддерживает только однобитную
+прозрачность. Один PNG превращается в один кадр GIF; анимация APNG
+не сохраняется. Размер входа ограничен допустимой длиной query
+в используемом окружении; отдельного маршрута загрузки в задании нет.
+Задания выполняются одним работником, результат хранится и на диске,
+и в Response. Автоматической очистки старых GIF нет.
+После аварийного прерывания незавершённая инструкция выполняется
+повторно; имя GIF определяется её ключом.
+
+Репозиторий: https://github.com/tooawf/python_practice_2
+Работа защищается очно согласно общим условиям практической работы.

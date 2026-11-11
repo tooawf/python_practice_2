@@ -144,6 +144,16 @@ class ApiMachine(RuleBasedStateMachine):
                     if row["user_agent"] == text]
         assert self.client.all_actor({"user_agent": text}) == expected
 
+    @precondition(lambda self: bool(self.instructions))
+    @rule(index=INDEX, age=st.integers(min_value=0, max_value=600))
+    def change_instruction_time(self, index, age):
+        """Изменение только времени не должно запускать новый конвертер."""
+        key = sorted(self.instructions)[index % len(self.instructions)]
+        value = FIXED_NOW - age
+        self.instructions[key]["time"] = value
+        assert self.client.modify_instruction(key, {"time": value}) == (
+            self.instructions[key])
+
     @rule()
     def authentication(self):
         """Любой маршрут отвергает отсутствующий или неверный Basic."""
@@ -196,6 +206,23 @@ class ApiMachine(RuleBasedStateMachine):
             assert error.status == HTTPStatus.NOT_FOUND
         else:
             raise AssertionError("ApiError expected")
+        self.business_errors()
+
+    def business_errors(self):
+        """Дубликаты, изменение ключа и отсутствующий Actor отклоняются."""
+        if self.actors:
+            key = next(iter(self.actors))
+            reply = self.client.request("PUT", f"/api/register-actor/{key}")
+            assert reply.status_code == HTTPStatus.CONFLICT
+            reply = self.client.request("PUT", f"/api/modify-actor/{key}",
+                                        {"key": 99})
+            assert reply.status_code == HTTPStatus.BAD_REQUEST
+        reply = self.client.request("PUT", "/api/register-instruction/9999",
+                                    {"actor": 9999, "content": content("x")})
+        assert reply.status_code == HTTPStatus.NOT_FOUND
+        reply = self.client.request("POST", "/api/all-actor", {"time": "bad"},
+                                    xml=True)
+        assert reply.status_code == HTTPStatus.BAD_REQUEST
 
     @invariant()
     def check_state(self):
@@ -204,7 +231,8 @@ class ApiMachine(RuleBasedStateMachine):
         self.check_instructions()
         self.check_responses()
         pairs = {(self.actors[row["actor"]]["user_agent"], row["content"])
-                 for row in self.instructions.values()}
+                 for row in self.instructions.values()
+                 if row["time"] >= FIXED_NOW - 5 * 60}
         actual = self.client.all_report()
         assert {(row["user_agent"], row["content"]) for row in actual} == pairs
 
