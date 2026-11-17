@@ -296,7 +296,7 @@ python -m coverage run --data-file=.coverage.tinydb -m pytest tests/test_mbt.py 
 python -m coverage report --data-file=.coverage.tinydb
 python -m coverage html --data-file=.coverage.tinydb
 python -m pytest tests/test_convert.py
-python -m pycodestyle --max-line-length=80 src tests examples tools
+python -m pycodestyle --max-line-length=79 src tests examples tools
 python tools/check_quality.py
 ```
 
@@ -308,7 +308,7 @@ python tools/check_quality.py
 локально в `htmlcov` и не включается в git.
 
 Проверка оформления ограничивает Python-файлы 1000 строками,
-строки 80 символами, функции 40 строками и 7 аргументами.
+строки 79 символами, функции 40 строками и 7 аргументами.
 Предел цикломатической сложности функций — 10. Комментарии вне
 docstring запрещены, числовые сравнения используют константы,
 кроме структурных 0 и 1. PEP8 проверяется pycodestyle.

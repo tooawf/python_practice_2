@@ -83,7 +83,9 @@ def add_error_handlers(app):
 
     @app.exception_handler(RequestValidationError)
     async def validation_error(request, error):
-        return XmlResponse({"error": "Invalid path parameter"}, status_code=400)
+        return XmlResponse(
+            {"error": "Invalid path parameter"}, status_code=400,
+        )
 
     @app.exception_handler(HTTPException)
     async def http_error(request, error):

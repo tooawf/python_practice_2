@@ -21,7 +21,8 @@ class ApiClient:
 
     def __init__(self, url, username, password, transport=None):
         self.transport = transport or httpx.Client(base_url=url, timeout=10)
-        token = base64.b64encode(f"{username}:{password}".encode("utf-8"))
+        credentials = "{}:{}".format(username, password)
+        token = base64.b64encode(credentials.encode("utf-8"))
         self.authorization = "Basic " + token.decode("ascii")
 
     def request(self, method, path, values=None, xml=False, headers=None):

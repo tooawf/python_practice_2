@@ -10,7 +10,7 @@ from radon.visitors import Class, Function
 
 
 MAX_FILE_LINES = 1000
-MAX_LINE_LENGTH = 80
+MAX_LINE_LENGTH = 79
 MAX_FUNCTION_LINES = 40
 MAX_ARGUMENTS = 7
 MAX_COMPLEXITY = 10
@@ -66,7 +66,7 @@ def inspect_file(path):
     if len(lines) > MAX_FILE_LINES:
         errors.append("more than 1000 lines")
     if any(len(line) > MAX_LINE_LENGTH for line in lines):
-        errors.append("line exceeds 80 characters")
+        errors.append("line exceeds 79 characters")
     tokens = tokenize.generate_tokens(StringIO(source).readline)
     if any(token.type == tokenize.COMMENT for token in tokens):
         errors.append("comments outside docstrings")
@@ -81,8 +81,8 @@ def main():
               for error in inspect_file(path)]
     if errors:
         raise SystemExit("\n".join(errors))
-    print(f"OK: {len(paths)} Python files; "
-          "limits 1000/80/40/7, complexity <=10")
+    print("OK: {} Python files, limits 1000/79/40/7, "
+          "complexity <=10".format(len(paths)))
 
 
 if __name__ == "__main__":

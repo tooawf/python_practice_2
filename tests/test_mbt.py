@@ -88,8 +88,10 @@ class ApiMachine(RuleBasedStateMachine):
         """После завершения добавить самостоятельно вычисленные поля ответа."""
         self.api.settle()
         key = max(self.responses, default=0) + 1
-        self.responses[key] = {"key": key, "instruction": instruction,
-                               "status": "skipped", "output": "", "failure": ""}
+        self.responses[key] = {
+            "key": key, "instruction": instruction,
+            "status": "skipped", "output": "", "failure": "",
+        }
 
     @precondition(lambda self: bool(self.actors))
     @rule(index=INDEX, text=TEXT)
