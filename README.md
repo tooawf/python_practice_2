@@ -344,3 +344,179 @@ GIF ограничивает число цветов и поддерживает
 
 Репозиторий: https://github.com/tooawf/python_practice_2
 Работа защищается очно согласно общим условиям практической работы.
+
+## Защита варианта 1 на компьютере преподавателя
+
+Работа преобразует PNG в GIF. Сначала конвертер работает как отдельная
+утилита. Затем HTTP-сервер принимает инструкции, ставит их в очередь
+и запускает ту же утилиту в фоне. Клиент запрашивает готовый результат
+отдельно. На третьем этапе записи сохраняются в TinyDB.
+
+### Подготовка на Windows
+
+1. Открой [репозиторий](https://github.com/tooawf/python_practice_2),
+   выбери **Code → Download ZIP** и распакуй архив.
+2. В проводнике открой распакованную папку с файлом `pyproject.toml`.
+   В адресной строке проводника введи `cmd` и нажми Enter.
+3. Проверь Python и установи проект. Для первой установки нужен интернет.
+
+```bat
+python --version
+python -m venv .venv
+.venv\Scripts\python.exe -m pip install -e ".[test]"
+```
+
+Используй Windows CMD. Все команды ниже выполняются из папки проекта.
+Для второго окна CMD открой ту же папку в проводнике и снова введи `cmd`.
+Окружение `.venv` создаётся один раз и доступно из обоих окон.
+
+### 1. Запустить конвертер первого этапа
+
+```bat
+.venv\Scripts\python.exe examples\demo.py
+.venv\Scripts\python.exe -m png_gif.convert examples\generated\result.gif < examples\generated\color.png
+explorer examples\generated
+```
+
+Первая команда проверяет пять PNG. У каждого в выводе будет `"ok": true`.
+Вторая запускает утилиту напрямую. Открой `color.png` и `result.gif`.
+В [convert.py](src/png_gif/convert.py) покажи `main()` и `convert()`.
+
+> Знак `<` передаёт байты PNG на стандартный ввод.
+> Аргумент `result.gif` задаёт путь, куда сохранить результат.
+
+### 2. Найти обработчик 4.1 второго этапа
+
+Это `POST /api/all-report`. В [routes.py](src/png_gif/routes.py) покажи
+декоратор `@router.post("/api/all-report")` внутри `report_router()`.
+Затем открой `Model.all_report()` в [model.py](src/png_gif/model.py).
+
+> Берутся инструкции за последние пять минут. К каждой добавляется
+> `user_agent` связанного Actor. В итоге остаются поля `user_agent`
+> и `content`, повторяющиеся пары убираются.
+
+Ответ с отчётом можно показать после создания инструкции в следующем пункте.
+
+### 3. Показать операцию 2.1 второго этапа
+
+Это `PUT /api/register-instruction/{key}`. Покажи `register_instruction()`
+в [client.py](src/png_gif/client.py), [routes.py](src/png_gif/routes.py)
+и [jobs.py](src/png_gif/jobs.py). В `Jobs._convert()` покажи вызов
+`subprocess.run()` с `input=png_bytes(row["content"])`.
+
+В первом окне CMD скопируй пример конфигурации и переключи копию на
+файловый слой. В блокноте замени `backend = tinydb` на `backend = file`,
+сохрани файл и закрой блокнот. Остальные настройки оставь как в примере.
+
+```bat
+copy /Y config.example.ini config.ini
+notepad config.ini
+```
+
+Запусти сервер в том же окне и оставь его работать.
+
+```bat
+.venv\Scripts\python.exe -m png_gif.server --config config.ini
+```
+
+Когда сервер напишет, что запущен на `http://127.0.0.1:8001`, во втором
+окне CMD запусти Python.
+
+```bat
+.venv\Scripts\python.exe
+```
+
+В строке `>>>` вводи следующий блок по одной строке, без приглашения `>>>`.
+`key` генерируется заново при каждом запуске, поэтому показ можно повторять.
+
+```python
+import base64
+from pathlib import Path
+import time
+from png_gif.client import ApiClient
+api = ApiClient("http://127.0.0.1:8001", "student", "png-gif-local")
+key = time.time_ns()
+api.register_actor(key, {"user_agent": "defense-demo"})
+content = base64.b64encode(Path("examples/generated/color.png").read_bytes()).decode("ascii")
+task = api.register_instruction(key, {"actor": key, "content": content})
+print(task["key"], task["status"])
+answers = api.all_response(key)
+print([row["status"] for row in answers])
+```
+
+У принятой инструкции будет статус `queued`. Если список ответов пуст,
+ещё раз выполни последние две строки. Когда появится `done`, выведи отчёт
+(операция 4.1) и сохрани скачанный GIF.
+
+```python
+print(api.all_report())
+Path("examples/generated/from_api.gif").write_bytes(base64.b64decode(answers[-1]["output"]))
+api.close()
+exit()
+```
+
+Открой `examples\generated\from_api.gif`. Останови сервер клавишами
+**Ctrl+C** в первом окне. Записи этого этапа лежат в `data\records.json`.
+
+> Клиент передаёт PNG в виде строки Base64. Сервер сохраняет инструкцию
+> и возвращает `queued`. Фоновый поток передаёт байты PNG конвертеру через
+> stdin, а ответ потом можно получить отдельным запросом. Ответы API
+> приходят в XML, а клиент разбирает их.
+
+### 4. Показать MBT и контрпример
+
+Открой [tests/test_mbt.py](tests/test_mbt.py). Покажи `ApiMachine`,
+правило `modify_instruction()` и сравнение ответа с независимым эталоном.
+Тест поднимает приложение самостоятельно.
+
+```bat
+set "TEST_BACKEND=file"
+.venv\Scripts\python.exe -m pytest tests/test_mbt.py -q
+```
+
+Ожидается `1 passed`. В [client.py](src/png_gif/client.py) найди
+`ApiClient.modify_instruction()`. Это обновление существующей инструкции
+из пункта **2.4**. Временно добавь перед `return` одну строку с тем же
+отступом, что и у `return`.
+
+```python
+        values = dict(values, time=0)
+```
+
+Сохрани файл и снова запусти ту же команду pytest. Ожидается `1 failed`.
+Покажи отличие в поле `time` и сценарий Hypothesis, который появится рядом
+с ошибкой. Затем удали добавленную строку, сохрани файл и запусти тест
+ещё раз. Ожидается `1 passed`.
+
+> Клиент при обновлении отправил лишнее поле `time=0`. Сервер сохранил
+> его, а эталон ожидал прежнее время. Hypothesis нашёл расхождение
+> и вывел сценарий, на котором оно возникает.
+
+### 5. Показать файл TinyDB третьего этапа
+
+Убедись, что файловый сервер остановлен. В первом окне запусти сервер
+с исходной конфигурацией, в которой уже указано `backend = tinydb`.
+
+```bat
+.venv\Scripts\python.exe -m png_gif.server --config config.example.ini
+```
+
+Во втором окне повтори клиентские команды из пункта 3. Дождись `done`,
+затем останови сервер через **Ctrl+C**. Открой JSON-файл базы.
+
+```bat
+explorer data
+notepad data\records.tinydb.json
+```
+
+Покажи таблицы `actor`, `instruction` и `response`. В [tiny_store.py](src/png_gif/tiny_store.py)
+можно показать класс `TinyStore` и методы `rows()` и `put()`.
+Тот же MBT с TinyDB запускается так.
+
+```bat
+set "TEST_BACKEND=tinydb"
+.venv\Scripts\python.exe -m pytest tests/test_mbt.py -q
+```
+
+> На третьем этапе TinyDB сохраняет документы в JSON-файле. Клиент
+> отправляет те же HTTP-запросы, потому что сервер меняет только слой хранения.
